@@ -1,0 +1,30 @@
+# Core ML
+torch>=2.2.0
+transformers>=4.45.0
+datasets>=2.18.0
+accelerate>=0.30.0
+peft>=0.12.0
+trl>=0.12.0
+bitsandbytes>=0.43.0
+
+# Data collection
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+aiohttp>=3.9.0
+
+# Text processing
+regex>=2024.0.0
+
+# API
+fastapi>=0.110.0
+uvicorn>=0.29.0
+pydantic>=2.7.0
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+rich>=13.7.0
+
+# Development
+pytest>=8.0.0
