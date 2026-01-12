@@ -26,9 +26,10 @@ def collect_ganjoor(poets: list = None):
 
     scraper = GanjoorScraper("data/raw/ganjoor")
 
-    # ID поэтов: 2=Рудаки, 3=Фирдавси, 5=Хайям, 7=Хафиз, 22=Саади, 26=Мавлави, 28=Аттор, 29=Низоми, 35=Джами
+    # Используем все поэты из POETS (25 классиков) если не указаны конкретные
     if poets is None:
-        poets = [2, 3, 5, 7, 22, 26, 28, 29, 35]  # Все классики
+        poets = list(scraper.POETS.keys())
+        print(f"Сбор от {len(poets)} поэтов...")
 
     total = scraper.collect_and_save(poets)
     print(f"\nВсего собрано: {total} стихов")

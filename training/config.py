@@ -28,7 +28,7 @@ class ModelConfig:
     bnb_4bit_use_double_quant: bool = True
 
     # Максимальная длина последовательности
-    max_seq_length: int = 512  # Стихи обычно короткие
+    max_seq_length: int = 1024  # Стихи обычно короткие
 
 
 @dataclass
@@ -36,10 +36,10 @@ class LoRAConfig:
     """Конфигурация LoRA"""
 
     # Ранг LoRA (больше = больше параметров, лучше качество)
-    r: int = 32
+    r: int = 64  # Увеличено для лучшего качества
 
     # Alpha (обычно alpha = 2 * r)
-    lora_alpha: int = 64
+    lora_alpha: int = 128
 
     # Dropout для регуляризации
     lora_dropout: float = 0.05
@@ -72,7 +72,7 @@ class TrainingConfig:
     val_data: str = "data/training/val.jsonl"
 
     # Гиперпараметры
-    num_train_epochs: int = 3
+    num_train_epochs: int = 5  # Увеличено для лучшего качества
     per_device_train_batch_size: int = 4
     per_device_eval_batch_size: int = 4
     gradient_accumulation_steps: int = 8  # Эффективный batch size = 32

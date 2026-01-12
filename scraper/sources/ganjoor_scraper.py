@@ -46,8 +46,10 @@ class GanjoorScraper:
 
     BASE_URL = "https://api.ganjoor.net/api"
 
-    # Поэты, чьи произведения относятся к таджикской традиции
+    # Поэты, чьи произведения относятся к таджикской/персидской традиции
+    # Расширенный список для большего объёма данных
     POETS = {
+        # Основные классики
         2: {"name": "رودکی", "tajik_name": "Рӯдакӣ", "era": "classical"},
         3: {"name": "فردوسی", "tajik_name": "Фирдавсӣ", "era": "classical"},
         5: {"name": "خیام", "tajik_name": "Хайём", "era": "classical"},
@@ -57,6 +59,24 @@ class GanjoorScraper:
         28: {"name": "عطار", "tajik_name": "Аттор", "era": "classical"},
         29: {"name": "نظامی", "tajik_name": "Низомӣ", "era": "classical"},
         35: {"name": "جامی", "tajik_name": "Ҷомӣ", "era": "classical"},
+
+        # Дополнительные классики
+        19: {"name": "سنایی", "tajik_name": "Саноӣ", "era": "classical"},
+        20: {"name": "انوری", "tajik_name": "Анварӣ", "era": "classical"},
+        21: {"name": "خاقانی", "tajik_name": "Хоқонӣ", "era": "classical"},
+        24: {"name": "فرخی", "tajik_name": "Фаррухӣ", "era": "classical"},
+        25: {"name": "عنصری", "tajik_name": "Унсурӣ", "era": "classical"},
+        27: {"name": "منوچهری", "tajik_name": "Манучеҳрӣ", "era": "classical"},
+        32: {"name": "ناصرخسرو", "tajik_name": "Носирхусрав", "era": "classical"},
+        33: {"name": "باباطاهر", "tajik_name": "Боботоҳир", "era": "classical"},
+        34: {"name": "ابوسعید", "tajik_name": "Абусаид", "era": "classical"},
+        36: {"name": "هلالی", "tajik_name": "Ҳилолӣ", "era": "classical"},
+        37: {"name": "کاتبی", "tajik_name": "Котибӣ", "era": "classical"},
+        38: {"name": "اهلی", "tajik_name": "Аҳлӣ", "era": "classical"},
+        39: {"name": "وحشی", "tajik_name": "Ваҳшӣ", "era": "classical"},
+        40: {"name": "صائب", "tajik_name": "Соиб", "era": "classical"},
+        41: {"name": "بیدل", "tajik_name": "Бедил", "era": "classical"},
+        42: {"name": "کلیم", "tajik_name": "Калим", "era": "classical"},
     }
 
     # Определение формы стиха по категории
