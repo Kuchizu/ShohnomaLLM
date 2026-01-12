@@ -211,3 +211,6 @@ __marimo__/
 # HuggingFace data (downloaded in Colab)
 data/raw/ganjoor_hf/
 data/processed/ganjoor_hf.jsonl
+data/processed/combined.jsonl
+data/training/train.jsonl
+data/training/val.jsonl
