@@ -91,14 +91,13 @@ class TrainingConfig:
     gradient_checkpointing: bool = True
     optim: str = "adamw_8bit"  # 8-bit Adam экономит память
 
-    # Логирование
+    # Логирование и сохранение
     logging_steps: int = 10
     eval_steps: int = 100
-    save_strategy: str = "epoch"
-    save_total_limit: int = 2
-
-    # Eval
+    save_steps: int = 100  # Совпадает с eval_steps
     evaluation_strategy: str = "steps"
+    save_strategy: str = "steps"  # Должен совпадать с eval для load_best_model
+    save_total_limit: int = 3
     load_best_model_at_end: bool = True
 
     # Разное
