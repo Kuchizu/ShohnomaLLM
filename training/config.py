@@ -148,12 +148,14 @@ def get_colab_t4_config() -> FullConfig:
 
 
 def get_colab_a100_config() -> FullConfig:
-    """Конфигурация для Colab A100 (40GB VRAM)"""
+    """Конфигурация для Colab A100 (40GB VRAM) - БЫСТРАЯ"""
     config = FullConfig()
     config.model.base_model = "Qwen/Qwen2.5-3B-Instruct"
-    config.model.load_in_4bit = False
-    config.training.per_device_train_batch_size = 8
-    config.training.gradient_accumulation_steps = 4
+    config.model.load_in_4bit = True  # 4-bit для большего batch size
+    config.training.per_device_train_batch_size = 16  # Большой batch
+    config.training.gradient_accumulation_steps = 2   # Меньше накопления = быстрее
+    config.training.dataloader_num_workers = 4        # Параллельная загрузка
+    config.training.gradient_checkpointing = False    # Выключаем - хватает VRAM
     config.lora.r = 64
     config.lora.lora_alpha = 128
     return config
