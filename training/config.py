@@ -95,7 +95,7 @@ class TrainingConfig:
     logging_steps: int = 10
     eval_steps: int = 100
     save_steps: int = 100  # Совпадает с eval_steps
-    evaluation_strategy: str = "steps"
+    eval_strategy: str = "steps"  # evaluation_strategy deprecated
     save_strategy: str = "steps"  # Должен совпадать с eval для load_best_model
     save_total_limit: int = 3
     load_best_model_at_end: bool = True
