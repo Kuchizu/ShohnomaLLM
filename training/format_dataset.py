@@ -22,20 +22,20 @@ SYSTEM_PROMPT = """تو شاعر فارسی هستی. تو می‌توانی ش�
 - رباعی: چهار مصرع، قافیه AABA
 - غزل: بیت‌ها با ردیف و قافیه
 - قصیده: شعر بلند در مدح یا وصف
-- مثنوی: جفت مصرع‌ها با قافیه AA BA CA
+- مثنوی: جفت مصرع‌ها با قافیه AA BB CC
 
 سبک شاعران بزرگ: رودکی، حافظ، سعدی، خیام، مولوی، جامی.
 
 به زبان فارسی می‌نویسی. شعرهای تو زیبا، معنادار و پرحس هستند."""
 
 
-# Примеры хороших стихов (персидский)
+# Примеры хороших стихов (персидский) - для возможного использования в будущем
 QUALITY_EXAMPLES = {
     "rubaiyat": [
-        "از آمدن و رفتن ما سودی نیست\nوز آمدگان جهان نشانی نیست",
+        "از آمدن و رفتن ما سودی نیست\nوز تار و پود هستی جز بادی نیست",  # Хайям
     ],
     "ghazal": [
-        "دل می‌رود ز دستم صاحبدلان خدا را\nدردا که راه نمی‌دانم یاران خدا را",
+        "دل می‌رود ز دستم صاحب‌دلان خدا را\nدردا که راز پنهان خواهد شد آشکارا",  # Хафиз
     ],
 }
 
@@ -217,7 +217,7 @@ class PromptGenerator:
         # Иногда добавляем стиль поэта
         if poet and random.random() < 0.2:
             style_prompt = random.choice(self.POET_STYLE_PROMPTS)
-            form_name = {"rubaiyat": "рубоӣ", "ghazal": "ғазал"}.get(form, "шеър")
+            form_name = {"rubaiyat": "رباعی", "ghazal": "غزل"}.get(form, "شعر")
             prompt = style_prompt.replace("{poet}", poet).replace("{form}", form_name)
 
         return prompt
@@ -264,6 +264,27 @@ class DatasetFormatter:
 
     def _clean_text(self, text: str) -> str:
         """Очистка текста стиха."""
+        # Нормализация арабских символов в персидские
+        # ي (U+064A Arabic) → ی (U+06CC Persian)
+        # ك (U+0643 Arabic) → ک (U+06A9 Persian)
+        # ە (U+06D5 Arabic) → ه (U+0647 Persian)
+        text = text.replace('\u064a', '\u06cc')  # ي → ی
+        text = text.replace('\u0643', '\u06a9')  # ك → ک
+        text = text.replace('\u06d5', '\u0647')  # ە → ه
+        # Также числа: ٤ → ۴ и т.д. (арабские → персидские)
+        arabic_nums = '٠١٢٣٤٥٦٧٨٩'
+        persian_nums = '۰۱۲۳۴۵۶۷۸۹'
+        for ar, fa in zip(arabic_nums, persian_nums):
+            text = text.replace(ar, fa)
+
+        # Убираем невидимые Unicode символы (кроме ZWNJ который важен для персидского)
+        # U+200B (Zero-Width Space), U+200D (ZWJ), U+FEFF (BOM), U+00AD (Soft Hyphen)
+        text = re.sub(r'[\u200b\u200d\ufeff\u00ad]', '', text)
+        # ZWNJ (U+200C) - оставляем, он важен для персидской типографики
+        # Но убираем множественные ZWNJ подряд
+        text = re.sub(r'\u200c+', '\u200c', text)
+        # Нормализуем разные виды пробелов в обычный пробел
+        text = re.sub(r'[\u00a0\u2000-\u200a\u202f\u205f]', ' ', text)
         # Убираем лишние пробелы
         text = re.sub(r' +', ' ', text)
         # Убираем пустые строки в начале/конце
@@ -289,6 +310,7 @@ class DatasetFormatter:
         output_path: str,
         source_type: str = "ganjoor",
         min_quality: float = 0.5,
+        deduplicate: bool = True,
     ) -> int:
         """Обработка JSONL файла с фильтрацией по качеству."""
         input_path = Path(input_path)
@@ -296,32 +318,63 @@ class DatasetFormatter:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         count = 0
-        skipped = 0
-        stats = {"too_short": 0, "too_much_arabic": 0, "garbage": 0, "low_quality": 0}
+        total_lines = 0
+        stats = {
+            "duplicates": 0,
+            "too_short": 0,
+            "too_long": 0,
+            "too_few_lines": 0,
+            "not_persian": 0,
+            "garbage_pattern": 0,
+            "low_quality": 0,
+            "empty": 0,
+        }
+
+        # Для дедупликации храним хеши текстов
+        seen_hashes = set() if deduplicate else None
+
+        # Считаем общее количество строк для прогресса
+        with open(input_path, 'r', encoding='utf-8') as f:
+            total_lines = sum(1 for _ in f)
 
         with open(input_path, 'r', encoding='utf-8') as fin:
             with open(output_path, 'w', encoding='utf-8') as fout:
-                for line in fin:
+                for i, line in enumerate(fin):
+                    # Прогресс каждые 10000 строк
+                    if (i + 1) % 10000 == 0:
+                        print(f"  Прогресс: {i + 1}/{total_lines} ({100 * (i + 1) // total_lines}%)")
+
                     data = json.loads(line)
 
-                    if source_type == "ganjoor":
-                        poem_text = data.get("text_persian", "")  # Арабица - без транслитерации!
-                    else:
-                        poem_text = data.get("text", "")
+                    # Пробуем text_persian, затем text (для совместимости)
+                    poem_text = data.get("text_persian") or data.get("text", "")
+
+                    # Дедупликация по хешу текста
+                    if deduplicate:
+                        text_hash = hash(poem_text.strip())
+                        if text_hash in seen_hashes:
+                            stats["duplicates"] += 1
+                            continue
+                        seen_hashes.add(text_hash)
 
                     form = data.get("form", "other")
                     poet = data.get("poet")
                     themes = data.get("themes", [])
 
-                    example = self.format_example(poem_text, form, poet, themes)
-
-                    if example is None:
-                        skipped += 1
+                    # Проверяем качество и получаем причину отказа
+                    is_valid, quality_score, reason = self.quality_filter.is_quality_poem(poem_text)
+                    if not is_valid:
+                        if reason in stats:
+                            stats[reason] += 1
                         continue
 
-                    if example.quality_score < min_quality:
+                    if quality_score < min_quality:
                         stats["low_quality"] += 1
-                        skipped += 1
+                        continue
+
+                    # Форматируем пример
+                    example = self.format_example(poem_text, form, poet, themes)
+                    if example is None:
                         continue
 
                     output_data = {
@@ -333,7 +386,12 @@ class DatasetFormatter:
                     fout.write("\n")
                     count += 1
 
-        print(f"Обработано: {count}, пропущено: {skipped}")
+        # Итоговая статистика
+        print(f"\nОбработано: {count} из {total_lines}")
+        print(f"Статистика отфильтрованных:")
+        for reason, cnt in stats.items():
+            if cnt > 0:
+                print(f"  - {reason}: {cnt}")
         print(f"  -> {output_path}")
         return count
 
@@ -462,15 +520,15 @@ def prepare_full_dataset(
 if __name__ == "__main__":
     formatter = DatasetFormatter()
 
-    test_poem = """Бӯи ҷӯи Мӯлиён ояд ҳаме,
-Ёди ёри меҳрубон ояд ҳаме,
-Реги Омуву дурушти роҳи ӯ,
-Зери поям парниён ояд ҳаме."""
+    test_poem = """بوی جوی مولیان آید همی
+یاد یار مهربان آید همی
+ریگ آموی و درشتی راه او
+زیر پایم پرنیان آید همی"""
 
     example = formatter.format_example(
         poem_text=test_poem,
         form="rubaiyat",
-        poet="Рӯдакӣ",
+        poet="رودکی",
         themes=["homeland", "love"],
     )
 
