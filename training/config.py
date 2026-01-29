@@ -152,11 +152,12 @@ def get_colab_a100_config() -> FullConfig:
     config = FullConfig()
     config.model.base_model = "Qwen/Qwen3-4B"  # Qwen3 лучше Qwen2.5!
     config.model.load_in_4bit = True  # 4-bit для экономии памяти
-    config.model.max_seq_length = 512  # Уменьшено для packing (меньше OOM)
-    config.training.per_device_train_batch_size = 4   # Уменьшено из-за packing
-    config.training.gradient_accumulation_steps = 8   # Эффективный batch = 32
+    config.model.max_seq_length = 512  # Уменьшено для packing
+    config.training.num_train_epochs = 1              # 1 эпоха достаточно для 30K
+    config.training.per_device_train_batch_size = 8   # Увеличено для скорости
+    config.training.gradient_accumulation_steps = 4   # Эффективный batch = 32
     config.training.dataloader_num_workers = 4        # Параллельная загрузка
-    config.training.gradient_checkpointing = True     # Экономия VRAM
+    config.training.gradient_checkpointing = False    # Выключаем для скорости
     config.lora.r = 64
     config.lora.lora_alpha = 128
     return config
